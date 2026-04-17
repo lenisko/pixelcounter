@@ -656,8 +656,7 @@ function recount() {
   const imgH = (img.height * pxH).toFixed(2);
   infoEl.innerHTML =
     `${img.width} &times; ${img.height} px<br>` +
-    `${imgW} &times; ${imgH} ${unit}<br>` +
-    `${allUnits(totalPixels)}`;
+    `${imgW} &times; ${imgH} ${unit}`;
 
   // Single pass
   selections.forEach(s => s.count = 0);

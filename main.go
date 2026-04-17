@@ -17,13 +17,14 @@ func main() {
 		panic(err)
 	}
 
+	host := flag.String("host", "localhost", "host to bind to")
 	port := flag.Int("port", 8373, "port to listen on")
 	flag.Parse()
 
 	http.Handle("/", http.FileServer(http.FS(sub)))
 
-	addr := fmt.Sprintf(":%d", *port)
-	fmt.Printf("Pixel Counter running at http://localhost%s\n", addr)
+	addr := fmt.Sprintf("%s:%d", *host, *port)
+	fmt.Printf("Pixel Counter running at http://%s\n", addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		panic(err)
 	}
