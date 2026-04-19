@@ -702,6 +702,8 @@ function recount() {
     if (mm2 < 100) parts.push(mm2.toFixed(2) + ' mm\u00B2');
     else parts.push((mm2 / 100).toFixed(4) + ' cm\u00B2');
     if (mm2 >= 100) parts.push((mm2 / 1e6).toFixed(6) + ' m\u00B2');
+    if (mm2 >= 1e8) parts.push((mm2 / 1e8).toFixed(4) + ' ar');
+    if (mm2 >= 1e10) parts.push((mm2 / 1e10).toFixed(4) + ' ha');
     if (mm2 >= 1e6) parts.push((mm2 / 1e12).toFixed(9) + ' km\u00B2');
     return parts.join('<br>');
   }
