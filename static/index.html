@@ -296,13 +296,13 @@
     <div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
         <div class="section-title" id="scaleModeLabel" style="margin-bottom:0"></div>
-        <button class="btn" id="scaleModeToggle" style="font-size:10px;padding:1px 8px;line-height:1.4" onclick="toggleScaleMode()">&x21C4;</button>
+        <button class="btn" id="scaleModeToggle" style="font-size:10px;padding:1px 8px;line-height:1.4" onclick="toggleScaleMode()">&#x21C4;</button>
       </div>
       <div class="scale-group">
         <span id="scalePrefix" style="font-size:12px;color:var(--text-dim)">1 px =</span>
-        <input type="number" id="pxW" value="1" min="0.001" step="0.1">
+        <input type="text" inputmode="decimal" id="pxW" value="1">
         <span style="font-size:12px;color:var(--text-dim)">&times;</span>
-        <input type="number" id="pxH" value="1" min="0.001" step="0.1">
+        <input type="text" inputmode="decimal" id="pxH" value="1">
         <select id="pxUnit">
           <option value="mm">mm</option>
           <option value="cm">cm</option>
@@ -425,6 +425,8 @@ function setLang(l) {
 
 document.getElementById('langSelect').addEventListener('change', (e) => setLang(e.target.value));
 
+function parseNum(v) { return Number(String(v).replace(',', '.')) || 0; }
+
 // ── Scale mode ──
 function updateScaleUI() {
   const label = document.getElementById('scaleModeLabel');
@@ -443,16 +445,16 @@ function toggleScaleMode() {
   const hEl = document.getElementById('pxH');
   if (scaleMode === 'overall') {
     if (img) {
-      const w = Number(wEl.value) || 1;
-      const h = Number(hEl.value) || 1;
+      const w = parseNum(wEl.value) || 1;
+      const h = parseNum(hEl.value) || 1;
       wEl.value = (w / img.width).toFixed(4);
       hEl.value = (h / img.height).toFixed(4);
     }
     scaleMode = 'pixel';
   } else {
     if (img) {
-      const w = Number(wEl.value) || 1;
-      const h = Number(hEl.value) || 1;
+      const w = parseNum(wEl.value) || 1;
+      const h = parseNum(hEl.value) || 1;
       wEl.value = (w * img.width).toFixed(2);
       hEl.value = (h * img.height).toFixed(2);
     }
@@ -678,8 +680,8 @@ function recount() {
   const ovImg = overlayCtx.createImageData(img.width, img.height);
   const ov = ovImg.data;
 
-  const inputW = Number(document.getElementById('pxW').value) || 1;
-  const inputH = Number(document.getElementById('pxH').value) || 1;
+  const inputW = parseNum(document.getElementById('pxW').value) || 1;
+  const inputH = parseNum(document.getElementById('pxH').value) || 1;
   const unit = document.getElementById('pxUnit').value;
   let pxW, pxH;
   if (scaleMode === 'overall') {
