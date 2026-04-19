@@ -294,9 +294,12 @@
 <div class="layout">
   <aside class="sidebar">
     <div>
-      <div class="section-title" data-t="pixelScale"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <div class="section-title" id="scaleModeLabel" style="margin-bottom:0"></div>
+        <button class="btn" id="scaleModeToggle" style="font-size:10px;padding:1px 8px;line-height:1.4" onclick="toggleScaleMode()">&x21C4;</button>
+      </div>
       <div class="scale-group">
-        <span style="font-size:12px;color:var(--text-dim)">1 px =</span>
+        <span id="scalePrefix" style="font-size:12px;color:var(--text-dim)">1 px =</span>
         <input type="number" id="pxW" value="1" min="0.001" step="0.1">
         <span style="font-size:12px;color:var(--text-dim)">&times;</span>
         <input type="number" id="pxH" value="1" min="0.001" step="0.1">
@@ -352,6 +355,7 @@
 const LANG = {
   en: {
     pixelScale: 'Pixel Scale',
+    overallScale: 'Overall Scale',
     overlay: 'Overlay',
     opacity: 'Opacity',
     colorSelections: 'Color Selections',
@@ -369,6 +373,7 @@ const LANG = {
   },
   pl: {
     pixelScale: 'Skala piksela',
+    overallScale: 'Skala obrazu',
     overlay: 'Nak\u0142adka',
     opacity: 'Krycie',
     colorSelections: 'Wyb\u00F3r kolor\u00F3w',
@@ -407,6 +412,7 @@ function applyLang() {
   document.getElementById('emptyText').textContent = t('emptyText');
   document.getElementById('dropOverlay').textContent = t('dropHint');
   document.getElementById('langSelect').value = lang;
+  updateScaleUI();
   renderSelections();
   if (imgData) recount();
 }
@@ -419,6 +425,46 @@ function setLang(l) {
 
 document.getElementById('langSelect').addEventListener('change', (e) => setLang(e.target.value));
 
+// ── Scale mode ──
+function updateScaleUI() {
+  const label = document.getElementById('scaleModeLabel');
+  const prefix = document.getElementById('scalePrefix');
+  if (scaleMode === 'overall') {
+    label.textContent = t('overallScale');
+    prefix.style.display = 'none';
+  } else {
+    label.textContent = t('pixelScale');
+    prefix.style.display = '';
+  }
+}
+
+function toggleScaleMode() {
+  const wEl = document.getElementById('pxW');
+  const hEl = document.getElementById('pxH');
+  if (scaleMode === 'overall') {
+    if (img) {
+      const w = Number(wEl.value) || 1;
+      const h = Number(hEl.value) || 1;
+      wEl.value = (w / img.width).toFixed(4);
+      hEl.value = (h / img.height).toFixed(4);
+    }
+    scaleMode = 'pixel';
+  } else {
+    if (img) {
+      const w = Number(wEl.value) || 1;
+      const h = Number(hEl.value) || 1;
+      wEl.value = (w * img.width).toFixed(2);
+      hEl.value = (h * img.height).toFixed(2);
+    }
+    scaleMode = 'overall';
+  }
+  localStorage.setItem('scaleMode', scaleMode);
+  localStorage.setItem('pxW', wEl.value);
+  localStorage.setItem('pxH', hEl.value);
+  updateScaleUI();
+  if (imgData) recount();
+}
+
 // ── Constants ──
 const MASK_COLORS = [
   '#e94560', '#00d2ff', '#00ff88', '#ffaa00', '#ff44ff',
@@ -430,6 +476,7 @@ let imgData = null;
 let zoom = 1;
 let selections = [];
 let nextId = 0;
+let scaleMode = 'overall';
 
 const mainCanvas = document.getElementById('mainCanvas');
 const overlayCanvas = document.getElementById('overlayCanvas');
@@ -631,9 +678,17 @@ function recount() {
   const ovImg = overlayCtx.createImageData(img.width, img.height);
   const ov = ovImg.data;
 
-  const pxW = Number(document.getElementById('pxW').value) || 1;
-  const pxH = Number(document.getElementById('pxH').value) || 1;
+  const inputW = Number(document.getElementById('pxW').value) || 1;
+  const inputH = Number(document.getElementById('pxH').value) || 1;
   const unit = document.getElementById('pxUnit').value;
+  let pxW, pxH;
+  if (scaleMode === 'overall') {
+    pxW = inputW / img.width;
+    pxH = inputH / img.height;
+  } else {
+    pxW = inputW;
+    pxH = inputH;
+  }
   const pxArea = pxW * pxH;
 
   // Unit conversion: pxArea is in unit², convert to mm² as base
@@ -652,11 +707,17 @@ function recount() {
   // Image dimensions
   const infoEl = document.getElementById('imageInfo');
   infoEl.style.display = '';
-  const imgW = (img.width * pxW).toFixed(2);
-  const imgH = (img.height * pxH).toFixed(2);
-  infoEl.innerHTML =
-    `${img.width} &times; ${img.height} px<br>` +
-    `${imgW} &times; ${imgH} ${unit}`;
+  if (scaleMode === 'overall') {
+    infoEl.innerHTML =
+      `${img.width} &times; ${img.height} px<br>` +
+      `1 px = ${pxW.toFixed(4)} &times; ${pxH.toFixed(4)} ${unit}`;
+  } else {
+    const imgW = (img.width * pxW).toFixed(2);
+    const imgH = (img.height * pxH).toFixed(2);
+    infoEl.innerHTML =
+      `${img.width} &times; ${img.height} px<br>` +
+      `${imgW} &times; ${imgH} ${unit}`;
+  }
 
   // Single pass
   selections.forEach(s => s.count = 0);
@@ -727,6 +788,8 @@ document.getElementById('overlayOpacity').addEventListener('input', (e) => {
 
 // ── Init ──
 function restoreSettings() {
+  const sm = localStorage.getItem('scaleMode');
+  if (sm) scaleMode = sm;
   const pw = localStorage.getItem('pxW');
   if (pw) document.getElementById('pxW').value = pw;
   const ph = localStorage.getItem('pxH');
